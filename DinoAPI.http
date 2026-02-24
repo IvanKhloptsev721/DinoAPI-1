@@ -1,0 +1,6 @@
+@DinoAPI_HostAddress = http://localhost:5016
+
+GET {{DinoAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
