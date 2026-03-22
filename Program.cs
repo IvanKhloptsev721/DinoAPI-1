@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using DinoAPI.Data;
+using DinoAPI.Services;
 
 namespace DinoAPI
 {
@@ -15,6 +16,9 @@ namespace DinoAPI
             // –егистрируем Entity Framework с SQLite
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite("Data Source=dinosaurus.db"));
+
+            // –егистрируем сервис дл€ работы с изображени€ми
+            builder.Services.AddScoped<IImageService, ImageService>();
 
             // Swagger дл€ тестировани€ API
             builder.Services.AddEndpointsApiExplorer();
@@ -35,6 +39,9 @@ namespace DinoAPI
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            // ƒобавл€ем статические файлы дл€ доступа к загруженным изображени€м
+            app.UseStaticFiles();
 
             app.UseHttpsRedirection();
             app.UseAuthorization();

@@ -31,4 +31,7 @@ public class UpdateDinosaurDto
     public string? PhotoUrl { get; set; }
 
     public string? Comments { get; set; }
+
+    // Добавляем поле для загрузки файла
+    public IFormFile? ImageFile { get; set; }
 }

@@ -19,6 +19,9 @@ public class Dinosaur
     public string? Description { get; set; }
     public string? PhotoUrl { get; set; }
 
+    // Новое поле для пути к локальному изображению
+    public string? ImagePath { get; set; }
+
     // Метаданные
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
