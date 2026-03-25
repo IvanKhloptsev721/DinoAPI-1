@@ -20,6 +20,17 @@ namespace DinoAPI
             // Регистрируем сервис для работы с изображениями
             builder.Services.AddScoped<IImageService, ImageService>();
 
+            // Настраиваем CORS для доступа из клиентского приложения
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             // Swagger для тестирования API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -43,9 +54,19 @@ namespace DinoAPI
             // Добавляем статические файлы для доступа к загруженным изображениям
             app.UseStaticFiles();
 
+            // Используем CORS
+            app.UseCors("AllowAll");
+
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+
+            // Создаем директорию для загрузки изображений, если её нет
+            var uploadPath = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "dinosaurs");
+            if (!Directory.Exists(uploadPath))
+            {
+                Directory.CreateDirectory(uploadPath);
+            }
 
             app.Run();
         }

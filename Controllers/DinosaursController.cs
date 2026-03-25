@@ -1,7 +1,6 @@
 using DinoAPI.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using DinoAPI.Data;
 using DinoAPI.Models;
 using DinoAPI.Services;
@@ -84,13 +83,23 @@ public class DinosaursController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Dinosaur>> CreateDinosaur([FromForm] CreateDinosaurDto dto)
     {
-        // Сохраняем изображение если оно было загружено
+        // Проверяем уникальность slug
+        var slug = GenerateSlug(dto.Name);
+        if (await _context.Dinosaurs.AnyAsync(d => d.Slug == slug))
+        {
+            return BadRequest(new { error = "Динозавр с таким именем уже существует" });
+        }
+
         string? imagePath = null;
+        string? photoUrl = null;
+
+        // Сохраняем изображение если оно было загружено
         if (dto.ImageFile != null)
         {
             try
             {
                 imagePath = await _imageService.SaveImageAsync(dto.ImageFile, dto.Name);
+                photoUrl = _imageService.GetImageUrl(imagePath);
             }
             catch (InvalidOperationException ex)
             {
@@ -101,7 +110,7 @@ public class DinosaursController : ControllerBase
         var dinosaur = new Dinosaur
         {
             Name = dto.Name,
-            Slug = GenerateSlug(dto.Name),
+            Slug = slug,
             Clade = dto.Clade,
             Era = dto.Era,
             Period = dto.Period,
@@ -109,7 +118,7 @@ public class DinosaursController : ControllerBase
             Genus = dto.Genus,
             Species = dto.Species,
             Description = dto.Description,
-            PhotoUrl = dto.PhotoUrl ?? (imagePath != null ? _imageService.GetImageUrl(imagePath) : "https://example.com/default-dino.jpg"),
+            PhotoUrl = photoUrl ?? dto.PhotoUrl ?? "https://example.com/default-dino.jpg",
             ImagePath = imagePath,
             Comments = dto.Comments,
             CreatedAt = DateTime.UtcNow,
@@ -139,48 +148,76 @@ public class DinosaursController : ControllerBase
             return NotFound();
         }
 
-        // Обработка нового изображения
-        if (dto.ImageFile != null)
+        // Начинаем транзакцию
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
         {
-            try
+            string? oldImagePath = null;
+
+            // Обработка нового изображения
+            if (dto.ImageFile != null)
             {
-                // Удаляем старое изображение если оно есть
-                if (!string.IsNullOrEmpty(dinosaur.ImagePath))
+                try
                 {
-                    await _imageService.DeleteImageAsync(dinosaur.ImagePath);
+                    // Сохраняем путь старого изображения для удаления
+                    oldImagePath = dinosaur.ImagePath;
+
+                    // Сохраняем новое изображение
+                    var imageName = dto.Name ?? dinosaur.Name;
+                    var newImagePath = await _imageService.SaveImageAsync(dto.ImageFile, imageName);
+                    dinosaur.ImagePath = newImagePath;
+                    dinosaur.PhotoUrl = _imageService.GetImageUrl(newImagePath);
                 }
-
-                // Сохраняем новое изображение
-                var newImagePath = await _imageService.SaveImageAsync(dto.ImageFile, dto.Name ?? dinosaur.Name);
-                dinosaur.ImagePath = newImagePath;
-                dinosaur.PhotoUrl = _imageService.GetImageUrl(newImagePath);
+                catch (InvalidOperationException ex)
+                {
+                    return BadRequest(new { error = ex.Message });
+                }
             }
-            catch (InvalidOperationException ex)
+            else if (dto.PhotoUrl != null)
             {
-                return BadRequest(new { error = ex.Message });
+                // Обновляем только URL, если изображение не загружено
+                dinosaur.PhotoUrl = dto.PhotoUrl;
             }
+
+            // Обновляем только переданные поля
+            if (dto.Name != null)
+            {
+                var newSlug = GenerateSlug(dto.Name);
+                if (newSlug != dinosaur.Slug &&
+                    await _context.Dinosaurs.AnyAsync(d => d.Slug == newSlug && d.Id != id))
+                {
+                    return BadRequest(new { error = "Динозавр с таким именем уже существует" });
+                }
+                dinosaur.Name = dto.Name;
+                dinosaur.Slug = newSlug;
+            }
+
+            dinosaur.Clade = dto.Clade ?? dinosaur.Clade;
+            dinosaur.Era = dto.Era ?? dinosaur.Era;
+            dinosaur.Period = dto.Period ?? dinosaur.Period;
+            dinosaur.GroupName = dto.GroupName ?? dinosaur.GroupName;
+            dinosaur.Genus = dto.Genus ?? dinosaur.Genus;
+            dinosaur.Species = dto.Species ?? dinosaur.Species;
+            dinosaur.Description = dto.Description ?? dinosaur.Description;
+            dinosaur.Comments = dto.Comments ?? dinosaur.Comments;
+            dinosaur.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Удаляем старое изображение только после успешного сохранения в БД
+            if (oldImagePath != null)
+            {
+                await _imageService.DeleteImageAsync(oldImagePath);
+            }
+
+            await transaction.CommitAsync();
         }
-
-        // Обновляем только переданные поля
-        dinosaur.Name = dto.Name ?? dinosaur.Name;
-        dinosaur.Clade = dto.Clade ?? dinosaur.Clade;
-        dinosaur.Era = dto.Era ?? dinosaur.Era;
-        dinosaur.Period = dto.Period ?? dinosaur.Period;
-        dinosaur.GroupName = dto.GroupName ?? dinosaur.GroupName;
-        dinosaur.Genus = dto.Genus ?? dinosaur.Genus;
-        dinosaur.Species = dto.Species ?? dinosaur.Species;
-        dinosaur.Description = dto.Description ?? dinosaur.Description;
-        dinosaur.PhotoUrl = dto.PhotoUrl ?? dinosaur.PhotoUrl;
-        dinosaur.Comments = dto.Comments ?? dinosaur.Comments;
-        dinosaur.UpdatedAt = DateTime.UtcNow;
-
-        // Обновляем slug если изменилось имя
-        if (dto.Name != null)
+        catch
         {
-            dinosaur.Slug = GenerateSlug(dto.Name);
+            await transaction.RollbackAsync();
+            throw;
         }
-
-        await _context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -254,6 +291,10 @@ public class DinosaursController : ControllerBase
             .Replace(" ", "-")
             .Replace(".", "")
             .Replace("'", "")
+            .Replace("?", "")
+            .Replace("&", "")
+            .Replace("/", "")
+            .Replace("\\", "")
             .Trim();
     }
 }
