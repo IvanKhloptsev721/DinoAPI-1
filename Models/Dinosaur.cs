@@ -1,6 +1,7 @@
 using System;
 
 namespace DinoAPI.Models;
+
 public class Dinosaur
 {
     public int Id { get; set; }
@@ -9,7 +10,7 @@ public class Dinosaur
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
 
-    // Необязательные поля - все с ? и = null!
+    // Необязательные поля
     public string? Clade { get; set; }
     public string? Era { get; set; }
     public string? Period { get; set; }
@@ -19,7 +20,7 @@ public class Dinosaur
     public string? Description { get; set; }
     public string? PhotoUrl { get; set; }
 
-    // Новое поле для пути к локальному изображению
+    // Поле для пути к локальному изображению (ДОЛЖНО БЫТЬ!)
     public string? ImagePath { get; set; }
 
     // Метаданные

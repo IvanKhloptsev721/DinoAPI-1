@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using DinoAPI.Models;
 
 namespace DinoAPI.Data;
+
 public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -20,7 +21,7 @@ public class ApplicationDbContext : DbContext
             .HasIndex(d => d.Slug)
             .IsUnique();
 
-        // Начальные данные (seed)
+        // Начальные данные (seed) - ИСПРАВЛЕНО
         modelBuilder.Entity<Dinosaur>().HasData(
             new Dinosaur
             {
@@ -35,8 +36,10 @@ public class ApplicationDbContext : DbContext
                 Species = "T. rex",
                 Description = "Один из крупнейших наземных хищников всех времен.",
                 PhotoUrl = "https://example.com/trex.jpg",
+                ImagePath = null, // Добавлено явно
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                Comments = null
             },
             new Dinosaur
             {
@@ -48,10 +51,13 @@ public class ApplicationDbContext : DbContext
                 Period = "Юра",
                 GroupName = "Stegosauridae",
                 Genus = "Stegosaurus",
+                Species = null,
                 Description = "Травоядный динозавр с характерными пластинами на спине.",
                 PhotoUrl = "https://example.com/stegosaurus.jpg",
+                ImagePath = null, // Добавлено явно
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                Comments = null
             }
         );
     }

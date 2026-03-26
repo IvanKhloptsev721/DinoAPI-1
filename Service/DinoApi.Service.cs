@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DinoAPI.Services
@@ -25,27 +26,40 @@ namespace DinoAPI.Services
             _environment = environment;
         }
 
+        private string GetUploadPath()
+        {
+            var webRootPath = _environment.WebRootPath;
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (!Directory.Exists(webRootPath))
+                {
+                    Directory.CreateDirectory(webRootPath);
+                }
+            }
+
+            var uploadPath = Path.Combine(webRootPath, _imagesFolder);
+            return uploadPath;
+        }
+
         public async Task<string?> SaveImageAsync(IFormFile imageFile, string dinosaurName)
         {
             if (imageFile == null || imageFile.Length == 0)
                 return null;
 
-            // Проверка размера файла
             if (imageFile.Length > MaxFileSize)
                 throw new InvalidOperationException($"Файл слишком большой. Максимальный размер: {MaxFileSize / 1024 / 1024} MB");
 
-            // Проверка расширения файла
             var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
             if (!_allowedExtensions.Contains(extension))
                 throw new InvalidOperationException($"Недопустимый формат файла. Разрешенные форматы: {string.Join(", ", _allowedExtensions)}");
 
-            // Создаем уникальное имя файла
-            var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{dinosaurName}_{Guid.NewGuid():N}{extension}";
-            var safeFileName = MakeSafeFileName(fileName);
+            var safeDinoName = string.Join("_", dinosaurName.Split(Path.GetInvalidFileNameChars()));
+            var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{safeDinoName}_{Guid.NewGuid():N}{extension}";
+            var safeFileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
 
-            var uploadPath = Path.Combine(_environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), _imagesFolder);
+            var uploadPath = GetUploadPath();
 
-            // Создаем директорию если её нет
             if (!Directory.Exists(uploadPath))
             {
                 Directory.CreateDirectory(uploadPath);
@@ -58,7 +72,12 @@ namespace DinoAPI.Services
                 await imageFile.CopyToAsync(stream);
             }
 
-            return Path.Combine(_imagesFolder, safeFileName).Replace("\\", "/");
+            var relativePath = Path.Combine(_imagesFolder, safeFileName).Replace("\\", "/");
+
+            Console.WriteLine($"Файл сохранен: {filePath}");
+            Console.WriteLine($"Относительный путь: {relativePath}");
+
+            return relativePath;
         }
 
         public async Task DeleteImageAsync(string imagePath)
@@ -66,11 +85,18 @@ namespace DinoAPI.Services
             if (string.IsNullOrEmpty(imagePath))
                 return;
 
-            var fullPath = Path.Combine(_environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), imagePath);
+            var webRootPath = _environment.WebRootPath;
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var fullPath = Path.Combine(webRootPath, imagePath.Replace("/", "\\"));
 
             if (File.Exists(fullPath))
             {
                 await Task.Run(() => File.Delete(fullPath));
+                Console.WriteLine($"Файл удален: {fullPath}");
             }
         }
 
@@ -79,12 +105,9 @@ namespace DinoAPI.Services
             if (string.IsNullOrEmpty(imagePath))
                 return string.Empty;
 
-            return $"/{imagePath.Replace("\\", "/")}";
-        }
-
-        private string MakeSafeFileName(string fileName)
-        {
-            return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+            var url = $"/{imagePath.Replace("\\", "/")}";
+            Console.WriteLine($"Сгенерирован URL: {url}");
+            return url;
         }
     }
 }

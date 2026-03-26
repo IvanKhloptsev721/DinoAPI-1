@@ -62,10 +62,29 @@ namespace DinoAPI
             app.MapControllers();
 
             // Создаем директорию для загрузки изображений, если её нет
-            var uploadPath = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "dinosaurs");
-            if (!Directory.Exists(uploadPath))
+            try
             {
-                Directory.CreateDirectory(uploadPath);
+                // Определяем путь к wwwroot
+                var webRootPath = app.Environment.WebRootPath;
+                if (string.IsNullOrEmpty(webRootPath))
+                {
+                    // Если wwwroot не существует, создаем папку в корне проекта
+                    webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    if (!Directory.Exists(webRootPath))
+                    {
+                        Directory.CreateDirectory(webRootPath);
+                    }
+                }
+
+                var uploadPath = Path.Combine(webRootPath, "uploads", "dinosaurs");
+                if (!Directory.Exists(uploadPath))
+                {
+                    Directory.CreateDirectory(uploadPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при создании директории для загрузки: {ex.Message}");
             }
 
             app.Run();
