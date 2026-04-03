@@ -133,6 +133,18 @@ public class DinosaursController : ControllerBase
             Genus = dto.Genus,
             Species = dto.Species,
             Description = dto.Description,
+
+            // ========== НОВЫЕ ПОЛЯ ==========
+            Size = dto.Size,
+            FullDescription = dto.FullDescription,
+            Diet = dto.Diet,
+            Locomotion = dto.Locomotion,
+            Continent = dto.Continent,
+            Status = dto.Status,
+            IsFeatured = dto.IsFeatured,
+            AllowComments = dto.AllowComments,
+            DiscoveryLocation = dto.DiscoveryLocation,
+
             PhotoUrl = photoUrl ?? dto.PhotoUrl ?? "https://example.com/default-dino.jpg",
             ImagePath = imagePath,
             Comments = dto.Comments,
@@ -220,14 +232,26 @@ public class DinosaursController : ControllerBase
             }
 
             // Обновляем все поля (даже если null, оставляем существующие)
-            if (dto.Clade != null) dinosaur.Clade = dto.Clade;
-            if (dto.Era != null) dinosaur.Era = dto.Era;
-            if (dto.Period != null) dinosaur.Period = dto.Period;
-            if (dto.GroupName != null) dinosaur.GroupName = dto.GroupName;
-            if (dto.Genus != null) dinosaur.Genus = dto.Genus;
-            if (dto.Species != null) dinosaur.Species = dto.Species;
-            if (dto.Description != null) dinosaur.Description = dto.Description;
-            if (dto.Comments != null) dinosaur.Comments = dto.Comments;
+// Обновляем все поля
+if (dto.Clade != null) dinosaur.Clade = dto.Clade;
+if (dto.Era != null) dinosaur.Era = dto.Era;
+if (dto.Period != null) dinosaur.Period = dto.Period;
+if (dto.GroupName != null) dinosaur.GroupName = dto.GroupName;
+if (dto.Genus != null) dinosaur.Genus = dto.Genus;
+if (dto.Species != null) dinosaur.Species = dto.Species;
+if (dto.Description != null) dinosaur.Description = dto.Description;
+if (dto.Comments != null) dinosaur.Comments = dto.Comments;
+
+// ========== НОВЫЕ ПОЛЯ ==========
+if (dto.Size != null) dinosaur.Size = dto.Size;
+if (dto.FullDescription != null) dinosaur.FullDescription = dto.FullDescription;
+if (dto.Diet != null) dinosaur.Diet = dto.Diet;
+if (dto.Locomotion != null) dinosaur.Locomotion = dto.Locomotion;
+if (dto.Continent != null) dinosaur.Continent = dto.Continent;
+if (dto.Status != null) dinosaur.Status = dto.Status;
+dinosaur.IsFeatured = dto.IsFeatured;
+dinosaur.AllowComments = dto.AllowComments;
+if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLocation;
 
             dinosaur.UpdatedAt = DateTime.UtcNow;
 

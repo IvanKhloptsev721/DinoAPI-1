@@ -21,44 +21,32 @@ public class ApplicationDbContext : DbContext
             .HasIndex(d => d.Slug)
             .IsUnique();
 
-        // Начальные данные (seed) - ИСПРАВЛЕНО
         modelBuilder.Entity<Dinosaur>().HasData(
-            new Dinosaur
-            {
-                Id = 1,
-                Name = "Tyrannosaurus Rex",
-                Slug = "tyrannosaurus-rex",
-                Clade = "Theropoda",
-                Era = "Мезозой",
-                Period = "Мел",
-                GroupName = "Tyrannosauridae",
-                Genus = "Tyrannosaurus",
-                Species = "T. rex",
-                Description = "Один из крупнейших наземных хищников всех времен.",
-                PhotoUrl = "https://example.com/trex.jpg",
-                ImagePath = null, // Добавлено явно
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                Comments = null
-            },
-            new Dinosaur
-            {
-                Id = 2,
-                Name = "Stegosaurus",
-                Slug = "stegosaurus",
-                Clade = "Thyreophora",
-                Era = "Мезозой",
-                Period = "Юра",
-                GroupName = "Stegosauridae",
-                Genus = "Stegosaurus",
-                Species = null,
-                Description = "Травоядный динозавр с характерными пластинами на спине.",
-                PhotoUrl = "https://example.com/stegosaurus.jpg",
-                ImagePath = null, // Добавлено явно
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                Comments = null
-            }
-        );
+           new Dinosaur
+           {
+               Id = 1,
+               Name = "Tyrannosaurus Rex",
+               Slug = "tyrannosaurus-rex",
+               Clade = "Theropoda",
+               Era = "Мезозой",
+               Period = "Мел",
+               GroupName = "Tyrannosauridae",
+               Genus = "Tyrannosaurus",
+               Species = "T. rex",
+               Description = "Один из крупнейших наземных хищников всех времен.",
+               Size = "12 метров в длину, 5 метров в высоту",
+               FullDescription = "Тираннозавр был одним из самых крупных хищников...",
+               Diet = "Хищник",
+               Locomotion = "Двуногий",
+               Continent = "Северная Америка",
+               Status = "Вымерший",
+               IsFeatured = true,
+               AllowComments = true,
+               DiscoveryLocation = "Формация Хелл-Крик, Монтана",
+               PhotoUrl = "https://example.com/trex.jpg",
+               CreatedAt = DateTime.UtcNow,
+               UpdatedAt = DateTime.UtcNow
+           }
+       );
     }
 }

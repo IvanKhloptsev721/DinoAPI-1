@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// DinoAPI/Models/Dto/CreateDinosaurDto.cs
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace DinoAPI.Models.Dto;
@@ -9,6 +10,7 @@ public class CreateDinosaurDto
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
+    // Существующие поля
     [MaxLength(100)]
     public string? Clade { get; set; }
 
@@ -29,11 +31,20 @@ public class CreateDinosaurDto
 
     public string? Description { get; set; }
 
+    // ========== НОВЫЕ ПОЛЯ ==========
+    public string? Size { get; set; }
+    public string? FullDescription { get; set; }
+    public string? Diet { get; set; }
+    public string? Locomotion { get; set; }
+    public string? Continent { get; set; }
+    public string? Status { get; set; }
+    public bool IsFeatured { get; set; }
+    public bool AllowComments { get; set; }
+    public string? DiscoveryLocation { get; set; }
+
+    // Изображения
     [Url]
     public string? PhotoUrl { get; set; }
-
-    public string? Comments { get; set; }
-
-    // Добавляем поле для загрузки файла
     public IFormFile? ImageFile { get; set; }
+    public string? Comments { get; set; }
 }
