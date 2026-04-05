@@ -22,14 +22,10 @@ public class DinosaursController : ControllerBase
         _imageService = imageService;
         _environment = environment;
     }
-
-    // GET: api/dinosaurs
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Dinosaur>>> GetDinosaurs()
     {
         var dinosaurs = await _context.Dinosaurs.ToListAsync();
-
-        // Добавляем полные URL для изображений
         foreach (var dino in dinosaurs)
         {
             if (!string.IsNullOrEmpty(dino.ImagePath))
@@ -41,7 +37,6 @@ public class DinosaursController : ControllerBase
         return dinosaurs;
     }
 
-    // GET: api/dinosaurs/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Dinosaur>> GetDinosaur(int id)
     {
@@ -52,12 +47,10 @@ public class DinosaursController : ControllerBase
             return NotFound();
         }
 
-        // Добавляем полный URL для изображения
+        
         if (!string.IsNullOrEmpty(dinosaur.ImagePath))
         {
             dinosaur.PhotoUrl = _imageService.GetImageUrl(dinosaur.ImagePath);
-
-            // Отладочная информация
             Console.WriteLine($"=== Dinosaur {id} ===");
             Console.WriteLine($"ImagePath: {dinosaur.ImagePath}");
             Console.WriteLine($"PhotoUrl: {dinosaur.PhotoUrl}");
@@ -67,7 +60,6 @@ public class DinosaursController : ControllerBase
         return dinosaur;
     }
 
-    // GET: api/dinosaurs/slug/tyrannosaurus-rex
     [HttpGet("slug/{slug}")]
     public async Task<ActionResult<Dinosaur>> GetDinosaurBySlug(string slug)
     {
@@ -79,7 +71,7 @@ public class DinosaursController : ControllerBase
             return NotFound();
         }
 
-        // Добавляем полный URL для изображения
+        
         if (!string.IsNullOrEmpty(dinosaur.ImagePath))
         {
             dinosaur.PhotoUrl = _imageService.GetImageUrl(dinosaur.ImagePath);
@@ -88,11 +80,11 @@ public class DinosaursController : ControllerBase
         return dinosaur;
     }
 
-    // POST: api/dinosaurs
+  
     [HttpPost]
     public async Task<ActionResult<Dinosaur>> CreateDinosaur([FromForm] CreateDinosaurDto dto)
     {
-        // Проверяем уникальность slug
+       
         var slug = GenerateSlug(dto.Name);
         if (await _context.Dinosaurs.AnyAsync(d => d.Slug == slug))
         {
@@ -102,7 +94,7 @@ public class DinosaursController : ControllerBase
         string? imagePath = null;
         string? photoUrl = null;
 
-        // Сохраняем изображение если оно было загружено
+      
         if (dto.ImageFile != null)
         {
             try
@@ -110,7 +102,7 @@ public class DinosaursController : ControllerBase
                 imagePath = await _imageService.SaveImageAsync(dto.ImageFile, dto.Name);
                 photoUrl = _imageService.GetImageUrl(imagePath);
 
-                // Отладочная информация
+              
                 Console.WriteLine($"=== Сохранение изображения ===");
                 Console.WriteLine($"ImagePath: {imagePath}");
                 Console.WriteLine($"PhotoUrl: {photoUrl}");
@@ -133,8 +125,6 @@ public class DinosaursController : ControllerBase
             Genus = dto.Genus,
             Species = dto.Species,
             Description = dto.Description,
-
-            // ========== НОВЫЕ ПОЛЯ ==========
             Size = dto.Size,
             FullDescription = dto.FullDescription,
             Diet = dto.Diet,
@@ -155,7 +145,7 @@ public class DinosaursController : ControllerBase
         _context.Dinosaurs.Add(dinosaur);
         await _context.SaveChangesAsync();
 
-        // Добавляем полный URL для изображения в ответе
+       
         if (!string.IsNullOrEmpty(dinosaur.ImagePath))
         {
             dinosaur.PhotoUrl = _imageService.GetImageUrl(dinosaur.ImagePath);
@@ -164,7 +154,7 @@ public class DinosaursController : ControllerBase
         return CreatedAtAction(nameof(GetDinosaur), new { id = dinosaur.Id }, dinosaur);
     }
 
-    // PUT: api/dinosaurs/5
+    
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDinosaur(int id, [FromForm] UpdateDinosaurDto dto)
     {
@@ -175,22 +165,22 @@ public class DinosaursController : ControllerBase
             return NotFound(new { error = "Динозавр не найден" });
         }
 
-        // Начинаем транзакцию
+       
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             string? oldImagePath = null;
 
-            // ========== ОБРАБОТКА ИЗОБРАЖЕНИЯ ==========
+            
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 try
                 {
-                    // Сохраняем путь старого изображения для удаления
+                    
                     oldImagePath = dinosaur.ImagePath;
 
-                    // Сохраняем новое изображение
+                    
                     var imageName = !string.IsNullOrEmpty(dto.Name) ? dto.Name : dinosaur.Name;
                     var newImagePath = await _imageService.SaveImageAsync(dto.ImageFile, imageName);
 
@@ -209,18 +199,14 @@ public class DinosaursController : ControllerBase
             }
             else if (!string.IsNullOrEmpty(dto.PhotoUrl))
             {
-                // Если передан PhotoUrl и нет файла, обновляем только URL
                 dinosaur.PhotoUrl = dto.PhotoUrl;
                 Console.WriteLine($"Обновлен PhotoUrl: {dinosaur.PhotoUrl}");
             }
-            // Если нет ни файла, ни PhotoUrl - оставляем существующее изображение
-
-            // ========== ОБНОВЛЕНИЕ ОСНОВНЫХ ПОЛЕЙ ==========
             if (!string.IsNullOrEmpty(dto.Name))
             {
                 var newSlug = GenerateSlug(dto.Name);
 
-                // Проверяем уникальность slug
+                
                 if (newSlug != dinosaur.Slug &&
                     await _context.Dinosaurs.AnyAsync(d => d.Slug == newSlug && d.Id != id))
                 {
@@ -231,8 +217,7 @@ public class DinosaursController : ControllerBase
                 dinosaur.Slug = newSlug;
             }
 
-            // Обновляем все поля (даже если null, оставляем существующие)
-// Обновляем все поля
+
 if (dto.Clade != null) dinosaur.Clade = dto.Clade;
 if (dto.Era != null) dinosaur.Era = dto.Era;
 if (dto.Period != null) dinosaur.Period = dto.Period;
@@ -241,8 +226,6 @@ if (dto.Genus != null) dinosaur.Genus = dto.Genus;
 if (dto.Species != null) dinosaur.Species = dto.Species;
 if (dto.Description != null) dinosaur.Description = dto.Description;
 if (dto.Comments != null) dinosaur.Comments = dto.Comments;
-
-// ========== НОВЫЕ ПОЛЯ ==========
 if (dto.Size != null) dinosaur.Size = dto.Size;
 if (dto.FullDescription != null) dinosaur.FullDescription = dto.FullDescription;
 if (dto.Diet != null) dinosaur.Diet = dto.Diet;
@@ -255,10 +238,10 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
 
             dinosaur.UpdatedAt = DateTime.UtcNow;
 
-            // Сохраняем изменения в БД
+            
             await _context.SaveChangesAsync();
 
-            // Удаляем старое изображение ТОЛЬКО если было загружено новое
+            
             if (oldImagePath != null)
             {
                 await _imageService.DeleteImageAsync(oldImagePath);
@@ -267,7 +250,7 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
 
             await transaction.CommitAsync();
 
-            // Получаем обновленного динозавра с правильным URL
+            
             var updatedDinosaur = await _context.Dinosaurs.FindAsync(id);
             if (!string.IsNullOrEmpty(updatedDinosaur?.ImagePath))
             {
@@ -332,7 +315,6 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
             return NotFound();
         }
 
-        // Удаляем изображение если оно есть
         if (!string.IsNullOrEmpty(dinosaur.ImagePath))
         {
             await _imageService.DeleteImageAsync(dinosaur.ImagePath);
@@ -344,7 +326,7 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
         return NoContent();
     }
 
-    // GET: api/dinosaurs/era/Мел
+
     [HttpGet("era/{era}")]
     public async Task<ActionResult<IEnumerable<Dinosaur>>> GetDinosaursByEra(string era)
     {
@@ -352,7 +334,6 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
             .Where(d => d.Era == era)
             .ToListAsync();
 
-        // Добавляем полные URL для изображений
         foreach (var dino in dinosaurs)
         {
             if (!string.IsNullOrEmpty(dino.ImagePath))
@@ -371,8 +352,6 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
         var dinosaurs = await _context.Dinosaurs
             .Where(d => d.Clade == clade)
             .ToListAsync();
-
-        // Добавляем полные URL для изображений
         foreach (var dino in dinosaurs)
         {
             if (!string.IsNullOrEmpty(dino.ImagePath))
@@ -435,9 +414,9 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
         return Ok(result);
     }
 
-    // GET: api/dinosaurs/debug/check-image - проверка конкретного изображения
+    // GET: api/dinosaurs/debug/check-image 
     [HttpGet("debug/check-image")]
-    public IActionResult CheckImage([FromQuery] string imagePath) // ← Переименовал параметр
+    public IActionResult CheckImage([FromQuery] string imagePath) 
     {
         if (string.IsNullOrEmpty(imagePath))
             return BadRequest("Path is required");
@@ -458,7 +437,7 @@ if (dto.DiscoveryLocation != null) dinosaur.DiscoveryLocation = dto.DiscoveryLoc
         return Ok(result);
     }
 
-    // GET: api/dinosaurs/debug/test - тестовый эндпоинт
+    // GET: api/dinosaurs/debug/test 
     [HttpGet("debug/test")]
     public IActionResult Test()
     {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using DinoAPI.Data;
 using DinoAPI.Services;
+using Microsoft.AspNetCore.Identity;
 
 namespace DinoAPI
 {
@@ -10,17 +11,43 @@ namespace DinoAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+
             builder.Services.AddControllers();
 
-            // Регистрируем Entity Framework с SQLite
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite("Data Source=dinosaurus.db"));
 
-            // Регистрируем сервис для работы с изображениями
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+
+            builder.Services.Configure<IdentityOptions>(options =>
+            {
+                // Настройки пароля
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 3;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+
+                // Настройки блокировки
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+
+                // Настройки пользователя
+                options.User.RequireUniqueEmail = false;
+            });
+
+            // Настройка аутентификации
+            builder.Services.AddAuthentication();
+            builder.Services.AddAuthorization();
+
+          
             builder.Services.AddScoped<IImageService, ImageService>();
 
-            // Настраиваем CORS для доступа из клиентского приложения
+           
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -31,44 +58,78 @@ namespace DinoAPI
                 });
             });
 
-            // Swagger для тестирования API
+         
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Автоматически создаем базу данных при запуске
+
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                dbContext.Database.EnsureCreated(); // Создает БД, если её нет
+                dbContext.Database.EnsureCreated();
+
+                // Создаём роли и администратора
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+                // Создаём роли
+                if (!roleManager.RoleExistsAsync("Admin").Result)
+                {
+                    roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+                }
+                if (!roleManager.RoleExistsAsync("User").Result)
+                {
+                    roleManager.CreateAsync(new IdentityRole("User")).Wait();
+                }
+
+                // Создаём администратора
+                var adminEmail = "admin@dinoapi.com";
+                var adminUser = userManager.FindByEmailAsync(adminEmail).Result;
+                if (adminUser == null)
+                {
+                    adminUser = new IdentityUser
+                    {
+                        UserName = "admin",
+                        Email = adminEmail,
+                        EmailConfirmed = true
+                    };
+                    var result = userManager.CreateAsync(adminUser, "Admin123!").Result;
+                    if (result.Succeeded)
+                    {
+                        userManager.AddToRoleAsync(adminUser, "Admin").Wait();
+                    }
+                }
             }
 
-            // Configure the HTTP request pipeline.
+     
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // Добавляем статические файлы для доступа к загруженным изображениям
+       
             app.UseStaticFiles();
 
-            // Используем CORS
+    
             app.UseCors("AllowAll");
 
             app.UseHttpsRedirection();
-            app.UseAuthorization();
+
+         
+            app.UseAuthentication(); 
+            app.UseAuthorization();  
+
             app.MapControllers();
 
-            // Создаем директорию для загрузки изображений, если её нет
+            
             try
             {
-                // Определяем путь к wwwroot
                 var webRootPath = app.Environment.WebRootPath;
                 if (string.IsNullOrEmpty(webRootPath))
                 {
-                    // Если wwwroot не существует, создаем папку в корне проекта
                     webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                     if (!Directory.Exists(webRootPath))
                     {

@@ -19,7 +19,7 @@ namespace DinoAPI.Services
         private readonly IWebHostEnvironment _environment;
         private readonly string _imagesFolder = "uploads/dinosaurs";
         private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        private const int MaxFileSize = 5 * 1024 * 1024; // 5 MB
+        private const int MaxFileSize = 5 * 1024 * 1024; 
 
         public ImageService(IWebHostEnvironment environment)
         {

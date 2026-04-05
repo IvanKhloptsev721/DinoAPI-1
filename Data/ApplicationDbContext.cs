@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using DinoAPI.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace DinoAPI.Data;
-
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -14,12 +14,12 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(modelBuilder); 
 
-        // Настройка уникальности Slug
         modelBuilder.Entity<Dinosaur>()
             .HasIndex(d => d.Slug)
             .IsUnique();
+
 
         modelBuilder.Entity<Dinosaur>().HasData(
            new Dinosaur
@@ -43,7 +43,7 @@ public class ApplicationDbContext : DbContext
                IsFeatured = true,
                AllowComments = true,
                DiscoveryLocation = "Формация Хелл-Крик, Монтана",
-               PhotoUrl = "https://example.com/trex.jpg",
+               PhotoUrl = "https://avatars.mds.yandex.net/i?id=174ae4ec130900a9d18a64f258c4ee80_l-7016679-images-thumbs&n=13",
                CreatedAt = DateTime.UtcNow,
                UpdatedAt = DateTime.UtcNow
            }
